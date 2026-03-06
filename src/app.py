@@ -3,6 +3,9 @@ import streamlit as st
 import numpy as np
 import joblib
 import matplotlib.pyplot as plt
+import pandas as pd
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.preprocessing import StandardScaler
 
 # --- Page Config ---
 st.set_page_config(
@@ -15,54 +18,36 @@ st.set_page_config(
 @st.cache_resource
 def load_model():
     base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-    model_path = os.path.join(base_dir, 'models', 'sleep_model.pkl')
-    scaler_path = os.path.join(base_dir, 'models', 'scaler.pkl')
+    data_path = os.path.join(base_dir, 'data', 'raw', 'Sleep_Efficiency.csv')
 
-    try:
-        model = joblib.load(model_path)
-        scaler = joblib.load(scaler_path)
-        return model, scaler
-    except Exception:
-        st.info("🔄 Training model for the first time, please wait...")
+    df = pd.read_csv(data_path)
+    df = df.dropna()
+    df.columns = df.columns.str.strip().str.lower().str.replace(" ", "_")
 
-        import pandas as pd
-        from sklearn.ensemble import RandomForestClassifier
-        from sklearn.model_selection import train_test_split
-        from sklearn.preprocessing import StandardScaler
+    X = df[[
+        'age', 'sleep_duration', 'rem_sleep_percentage',
+        'deep_sleep_percentage', 'light_sleep_percentage',
+        'awakenings', 'caffeine_consumption',
+        'alcohol_consumption', 'exercise_frequency', 'smoking_status'
+    ]].copy()
+    X['smoking_status'] = X['smoking_status'].map({'Yes': 1, 'No': 0})
 
-        data_path = os.path.join(base_dir, 'data', 'raw', 'Sleep_Efficiency.csv')
-        df = pd.read_csv(data_path)
-        df = df.dropna()
-        df.columns = df.columns.str.strip().str.lower().str.replace(" ", "_")
+    y = pd.cut(df['sleep_efficiency'],
+               bins=[0, 0.70, 0.85, 1.0],
+               labels=[0, 1, 2]).astype(int)
 
-        X = df[[
-            'age', 'sleep_duration', 'rem_sleep_percentage',
-            'deep_sleep_percentage', 'light_sleep_percentage',
-            'awakenings', 'caffeine_consumption',
-            'alcohol_consumption', 'exercise_frequency', 'smoking_status'
-        ]].copy()
-        X['smoking_status'] = X['smoking_status'].map({'Yes': 1, 'No': 0})
+    scaler = StandardScaler()
+    X_scaled = scaler.fit_transform(X.values)
 
-        y = pd.cut(df['sleep_efficiency'],
-                   bins=[0, 0.70, 0.85, 1.0],
-                   labels=[0, 1, 2]).astype(int)
+    model = RandomForestClassifier(
+        n_estimators=200,
+        max_depth=10,
+        class_weight='balanced',
+        random_state=42
+    )
+    model.fit(X_scaled, y.values)
 
-        X_train, X_test, y_train, y_test = train_test_split(
-            X.values, y.values, test_size=0.2, random_state=42, stratify=y)
-
-        scaler = StandardScaler()
-        X_train = scaler.fit_transform(X_train)
-
-        model = RandomForestClassifier(
-            n_estimators=200, max_depth=10,
-            class_weight='balanced', random_state=42)
-        model.fit(X_train, y_train)
-
-        os.makedirs(os.path.join(base_dir, 'models'), exist_ok=True)
-        joblib.dump(model, model_path)
-        joblib.dump(scaler, scaler_path)
-
-        return model, scaler
+    return model, scaler
 
 model, scaler = load_model()
 
@@ -120,7 +105,6 @@ with col2:
 
     st.markdown("---")
 
-    # --- Smartwatch Toggle ---
     has_smartwatch = st.toggle(
         "⌚ I have a smartwatch (Fitbit / Apple Watch / Garmin)",
         value=False
