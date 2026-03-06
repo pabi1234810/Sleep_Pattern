@@ -1,3 +1,4 @@
+import os
 import streamlit as st
 import numpy as np
 import joblib
@@ -13,8 +14,9 @@ st.set_page_config(
 # --- Load Model ---
 @st.cache_resource
 def load_model():
-    model = joblib.load('models/sleep_model.pkl')
-    scaler = joblib.load('models/scaler.pkl')
+    base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    model = joblib.load(os.path.join(base_dir, 'models', 'sleep_model.pkl'))
+    scaler = joblib.load(os.path.join(base_dir, 'models', 'scaler.pkl'))
     return model, scaler
 
 model, scaler = load_model()
@@ -23,7 +25,6 @@ LABELS = ['Poor', 'Fair', 'Good']
 EMOJI  = ['🔴', '🟡', '✅']
 COLORS = ['#e74c3c', '#f39c12', '#2ecc71']
 
-# Average values used when user has no smartwatch
 AVERAGE_REM   = 22
 AVERAGE_DEEP  = 18
 AVERAGE_LIGHT = 60
@@ -104,7 +105,7 @@ with col2:
         - 💭 REM: 22%
         - 🌊 Deep: 18%
         - 😴 Light: 60%
-        
+
         For a more accurate prediction, consider using a Fitbit or Apple Watch.
         """)
         rem_pct   = AVERAGE_REM
@@ -163,9 +164,8 @@ if st.button("🔍 Predict My Sleep Quality", use_container_width=True):
         stages = ['REM 💭', 'Deep 🌊', 'Light 😴']
         values = [rem_pct, deep_pct, light_pct]
         colors = ['#9b59b6', '#2ecc71', '#3498db']
-        wedges, texts, autotexts = ax2.pie(
-            values, labels=stages, colors=colors,
-            autopct='%1.1f%%', startangle=90)
+        ax2.pie(values, labels=stages, colors=colors,
+                autopct='%1.1f%%', startangle=90)
         if not has_smartwatch:
             ax2.set_title("Average Sleep Stage Distribution")
         else:
