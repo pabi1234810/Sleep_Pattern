@@ -1,0 +1,12 @@
+numpy
+pandas
+scikit-learn
+torch
+matplotlib
+seaborn
+plotly
+jupyter
+wfdb          # for PhysioNet data loading
+pyEDFlib      # for EDF sleep files
+tqdm
+joblib
