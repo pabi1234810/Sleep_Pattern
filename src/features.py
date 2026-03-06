@@ -15,11 +15,8 @@ def build_features(df):
         'smoking_status'
     ]].copy()
 
-    # Encode smoking status (yes/no → 1/0)
     X['smoking_status'] = X['smoking_status'].map({'Yes': 1, 'No': 0})
 
-    # Target: sleep quality buckets based on sleep efficiency
-    # 0 = Poor (<0.7), 1 = Fair (0.7–0.85), 2 = Good (>0.85)
     y = pd.cut(df['sleep_efficiency'],
                bins=[0, 0.70, 0.85, 1.0],
                labels=[0, 1, 2]).astype(int)

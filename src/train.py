@@ -56,7 +56,6 @@ if __name__ == "__main__":
     X_train = scaler.fit_transform(X_train)
     X_test = scaler.transform(X_test)
 
-    # Tune XGBoost with GridSearch
     print("🔍 Tuning hyperparameters...")
     param_grid = {
         'n_estimators': [100, 200, 300],
@@ -71,12 +70,9 @@ if __name__ == "__main__":
     )
 
     grid_search = GridSearchCV(
-        xgb,
-        param_grid,
-        cv=5,
-        scoring='accuracy',
-        n_jobs=-1,
-        verbose=1
+        xgb, param_grid,
+        cv=5, scoring='accuracy',
+        n_jobs=-1, verbose=1
     )
     grid_search.fit(X_train, y_train)
 
